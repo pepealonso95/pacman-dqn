@@ -4,3 +4,4 @@ __pycache__/
 pacman_runs/
 *.pt
 .DS_Store
+.vscode/settings.json

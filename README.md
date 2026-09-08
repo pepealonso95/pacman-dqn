@@ -5,7 +5,8 @@
 **[Open the notebook in Google Colab](https://colab.research.google.com/github/pepealonso95/pacman-dqn/blob/main/pacman_dqn.ipynb)**
 
 Open **[pacman_dqn.ipynb](pacman_dqn.ipynb)**, choose three numbers, and run all cells.
-The complete DQN is in the notebook. No coding or separate source files are needed.
+The complete DQN is in the notebook, split into short code cells with plain-language explanations.
+No coding is needed. Keep `pacman_player.py` beside the notebook for the local floating gameplay player.
 
 | Your choice | What it controls | Starting point |
 |---|---|---|
@@ -21,6 +22,32 @@ Exploration stays constant after 1,000 random warm-up decisions. The code includ
 **Google Colab:** use the Colab button above, select Runtime → Change runtime type → T4 GPU if available, edit the three values in section 1, and choose Runtime → Run all. The setup cell installs packages automatically.
 
 **Local Jupyter or VS Code:** clone or download this repository, open the notebook, select a Python 3.11–3.13 kernel, edit the three choices, and choose Run All. CUDA, Apple Silicon MPS, and CPU are detected automatically; a real training batch checks the selected device before the experiment starts.
+
+**VS Code with `py313`:** select **Select Kernel → Python Environments → py313 (Python 3.13)**.
+Use the Python and Jupyter extensions. The local Conda `py313` environment supports Tk for popup playback.
+The notebook still runs if Tk is unavailable, but samples appear inline only.
+
+### Fast floating gameplay samples
+
+The before-training sample, every-25-game progress samples, and final sample play at **4× speed**.
+A 20-second excerpt takes about five seconds to watch. Each local sample opens automatically in a separate
+**always-on-top window**, with Pause, Replay, and a “Keep above other windows” toggle. Press Escape or close
+the window to dismiss it. A new sample replaces the previous popup. Training continues while playback loops.
+
+The popup plays a recorded evaluation excerpt once that evaluation finishes. Training and evaluation already
+run as fast as the hardware allows, without real-time delays. Faster preview playback does not change the
+agent's decisions, learning settings, or full-game scores. The saved GIFs also use accelerated playback.
+
+Set `SHOW_POPUPS = False` in the preview settings for inline playback only. Colab, remote kernels without
+a desktop, and Python installations without Tk use the inline GIF. The popup helper is optional, so the
+notebook still runs by itself in Colab.
+
+### Read the learning process one piece at a time
+
+Section 3 separates screen preparation, the network, memory, move selection, and a learning update.
+Section 4 separates evaluation, playback, checkpoints, logging, and plots. Section 5 separates experiment
+setup, baseline evaluation, one training game, progress samples, saving, and the final experiment loop.
+Each code cell contains at most 33 lines and has an explanation immediately before it.
 
 If you need to install Jupyter first:
 
@@ -45,7 +72,7 @@ Each experiment saves a separate folder under `pacman_runs/`:
 - CSV training history, elapsed time, decision count, and number of learning updates.
 - A ZIP download with all results.
 
-Use Interrupt / Stop once to end training early and save progress, then run the remaining cells for evaluation and download. The saved model includes any updates from the interrupted episode; the episode log contains completed episodes only. Checkpoints support playback, not exact training resumption. Rerunning training starts a new experiment from scratch.
+Use Interrupt / Stop once to end training early and save progress, then run section 6 onward for evaluation and download. The saved model includes any updates from the interrupted episode; the episode log contains completed episodes only. Checkpoints support playback, not exact training resumption. To start again, rerun from section 5a or choose Run All; the training cell guards against accidentally reusing an old experiment.
 
 In Colab, download the ZIP before the session ends. Commit the notebook, selected GIFs, plots, comparison, and your written reflection to your own repository. Generated run folders and checkpoints are ignored by default; copy the selected evidence into a `results/` folder to publish it. Keep large checkpoints locally or attach them to a release.
 
@@ -65,11 +92,23 @@ Fork this repository or create your own repository containing the notebook and s
 
 ## Verification
 
-Executed every notebook cell in order through a real Jupyter kernel on macOS Apple Silicon with MPS, Python 3.13.9, PyTorch 2.10.0, Gymnasium 1.3.0, ALE 0.11.2, OpenCV headless 4.14.0.94, NumPy 2.3.4, Matplotlib 3.10.6, and Pillow 11.3.0.
+Executed every revised notebook cell in order through the real `py313` Jupyter kernel on macOS Apple Silicon with MPS, Python 3.13.9, PyTorch 2.10.0, Gymnasium 1.3.0, ALE 0.11.2, OpenCV headless 4.14.0.94, NumPy 2.3.4, Matplotlib 3.10.6, and Pillow 11.3.0.
 
-The classroom check used 20% exploration, **five episodes**, and learning rate 0.0001 with all other notebook settings unchanged: 3,306 decisions and 577 learning updates. All five before/after games completed. Verified changed model weights, finite learning losses after warm-up, checkpoint loading, replay reconstruction, frame-stack reset, different targets for termination and truncation, GIF frames, plot creation, and ZIP output. A separate shortened two-episode test exercised the periodic demonstration/checkpoint path.
+The verification copy used 20% exploration, **five episodes**, learning rate 0.0001, and samples every two games to exercise the periodic popup/checkpoint path: 3,306 decisions and 577 learning updates. All five before/after evaluation games completed. Checks verified changed and finite model weights, finite losses after warm-up, periodic checkpoints and samples at games 2 and 4, accelerated GIF frame counts and duration, the dashboard, and ZIP contents.
 
-This verifies execution, not strong Pac-Man performance. A full 100-episode run, CUDA, Windows, and hosted Colab have not been tested here. The distributed notebook has no saved outputs and retains its 100-episode starting value.
+The native Tk player was also tested on the local desktop: window mapping, loaded gameplay image, window dimensions, always-on-top state, Pause/Play, Replay, and unpin/repin. The no-Tk inline fallback was checked separately. The updated notebook was opened in VS Code with `py313`; the ordered execution test used Jupyter programmatically, not a VS Code Run All click.
+
+To repeat the five-game verification without editing the classroom notebook:
+
+```sh
+python tests/verify_notebook.py --kernel py313
+# For a kernel without a local desktop:
+python tests/verify_notebook.py --kernel py313 --no-popups
+```
+
+Run that command with the same Python environment used by the notebook. Its executed test notebook and all artifacts are saved under `pacman_runs/`.
+
+This verifies execution, not strong Pac-Man performance. A full 100-episode run of this revision, CUDA, Windows, and hosted Colab have not been tested here. The distributed notebook has no saved outputs and retains its 100-episode starting value and every-25-game sample interval.
 
 ## Sources
 
