@@ -32,7 +32,8 @@ The notebook still runs if Tk is unavailable, but samples appear inline only.
 The before-training sample, every-25-game progress samples, and final sample play at **4× speed**.
 A 20-second excerpt takes about five seconds to watch. Each local sample opens automatically in a separate
 **always-on-top window**, with Pause, Replay, and a “Keep above other windows” toggle. Press Escape or close
-the window to dismiss it. A new sample replaces the previous popup. Training continues while playback loops.
+the window to dismiss it. Each sample plays twice and stops on its final frame. Replay starts two more plays.
+A new sample replaces the previous popup, and training continues while it plays.
 
 The popup plays a recorded evaluation excerpt once that evaluation finishes. Training and evaluation already
 run as fast as the hardware allows, without real-time delays. Faster preview playback does not change the
@@ -96,7 +97,7 @@ Executed every revised notebook cell in order through the real `py313` Jupyter k
 
 The verification copy used 20% exploration, **five episodes**, learning rate 0.0001, and samples every two games to exercise the periodic popup/checkpoint path: 3,306 decisions and 577 learning updates. All five before/after evaluation games completed. Checks verified changed and finite model weights, finite losses after warm-up, periodic checkpoints and samples at games 2 and 4, accelerated GIF frame counts and duration, the dashboard, and ZIP contents.
 
-The native Tk player was also tested on the local desktop: window mapping, loaded gameplay image, window dimensions, always-on-top state, Pause/Play, Replay, and unpin/repin. The no-Tk inline fallback was checked separately. The updated notebook was opened in VS Code with `py313`; the ordered execution test used Jupyter programmatically, not a VS Code Run All click.
+The native Tk player was also tested on the local desktop: window mapping, loaded gameplay image, exactly two plays, window dimensions, always-on-top state, Pause/Play, Replay, and unpin/repin. The no-Tk inline fallback was checked separately. The updated notebook was opened in VS Code with `py313`; the ordered execution test used Jupyter programmatically, not a VS Code Run All click.
 
 To repeat the five-game verification without editing the classroom notebook:
 

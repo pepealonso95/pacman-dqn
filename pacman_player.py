@@ -6,6 +6,20 @@ import subprocess
 import sys
 
 _player = None
+PREVIEW_PLAYS = 2
+
+
+def _advance(state, frame_count):
+    """Move to the next frame and stop after two complete plays."""
+    if state["index"] == frame_count - 1:
+        state["completed"] += 1
+        if state["completed"] >= PREVIEW_PLAYS:
+            state["paused"] = True
+            return True
+        state["index"] = 0
+    else:
+        state["index"] += 1
+    return False
 
 
 def show_popup(gif_path, title="Pac-Man sample · 4× speed"):
@@ -23,8 +37,15 @@ def show_popup(gif_path, title="Pac-Man sample · 4× speed"):
         return False
     path = Path(gif_path).resolve(strict=True)
     if _player is not None and _player.poll() is None:
-        _player.terminate()
-        _player.wait(timeout=5)
+        try:
+            _player.terminate()
+            _player.wait(timeout=0.5)
+        except subprocess.TimeoutExpired:
+            # A Tk window can ignore termination briefly on macOS. Never let a
+            # preview window pause or fail the training loop.
+            _player.kill()
+        except OSError:
+            pass
     # Keep GUI errors available without filling the notebook with subprocess logs.
     with path.with_suffix(".player.log").open("a") as log:
         _player = subprocess.Popen(
@@ -58,21 +79,24 @@ def play(gif_path, title):
             delays.append(max(20, frame.info.get("duration", 60)))
     screen = tk.Label(root, bg="#101522")
     screen.pack()
-    state = {"index": 0, "paused": False}
+    state = {"index": 0, "paused": False, "completed": 0}
 
     def tick():
         index = state["index"]
         screen.configure(image=frames[index])
         if not state["paused"]:
-            state["index"] = (index + 1) % len(frames)
+            if _advance(state, len(frames)):
+                pause.configure(text="Play again")
         root.after(delays[index], tick)
 
     def toggle_pause():
+        if state["paused"] and state["completed"] >= PREVIEW_PLAYS:
+            state.update(index=0, completed=0)
         state["paused"] = not state["paused"]
         pause.configure(text="Play" if state["paused"] else "Pause")
 
     def replay():
-        state.update(index=0, paused=False)
+        state.update(index=0, paused=False, completed=0)
         pause.configure(text="Pause")
 
     controls = tk.Frame(root, bg="#101522", pady=10)
@@ -84,7 +108,7 @@ def play(gif_path, title):
     tk.Checkbutton(root, text="Keep above other windows", variable=on_top,
                    command=lambda: root.attributes("-topmost", on_top.get()),
                    bg="#101522", fg="white", selectcolor="#101522").pack()
-    tk.Label(root, text="Recorded sample · training continues in the notebook",
+    tk.Label(root, text=f"Recorded sample · plays {PREVIEW_PLAYS} times",
              bg="#101522", fg="#b9c4d6", font=("Helvetica", 10)).pack(pady=8)
     root.bind("<Escape>", lambda event: root.destroy())
     root.lift()

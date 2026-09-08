@@ -10,6 +10,8 @@ import csv
 import json
 import math
 from pathlib import Path
+import re
+import sys
 import zipfile
 
 import nbformat
@@ -17,18 +19,27 @@ from nbclient import NotebookClient
 from PIL import Image, ImageSequence
 import torch
 
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from pacman_player import PREVIEW_PLAYS, _advance
+
 
 def verify():
     parser = argparse.ArgumentParser()
     parser.add_argument("--kernel", default="py313")
     parser.add_argument("--no-popups", action="store_true")
     args = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
+    playback = {"index": 0, "paused": False, "completed": 0}
+    for _ in range(3 * PREVIEW_PLAYS):
+        _advance(playback, 3)
+    assert playback == {"index": 2, "paused": True, "completed": PREVIEW_PLAYS}
+    root = ROOT
     notebook = nbformat.read(root / "pacman_dqn.ipynb", as_version=4)
     for cell in notebook.cells:
         tags = cell.metadata.get("tags", [])
         if "choices" in tags:
-            cell.source = cell.source.replace("EPISODES = 100", "EPISODES = 5")
+            cell.source = re.sub(r"^EPISODES = \d+$", "EPISODES = 5",
+                                 cell.source, flags=re.MULTILINE)
         if "settings" in tags:
             cell.source = cell.source.replace("DEMO_EVERY = 25", "DEMO_EVERY = 2")
         if args.no_popups and "preview-settings" in tags:
@@ -46,6 +57,7 @@ def verify():
     assert summary["learning_updates"] > 0
     config = json.loads((run / "config.json").read_text())
     assert config["python"].startswith("3.13.") and config["preview_speed"] == 4
+    assert config["preview_plays"] == PREVIEW_PLAYS == 2
     with (run / "training.csv").open() as handle:
         rows = list(csv.DictReader(handle))
     assert len(rows) == 5
@@ -65,6 +77,7 @@ def verify():
     for name in ("episode_0000.gif", "episode_0002.gif", "episode_0004.gif", "final_best.gif"):
         with Image.open(run / "demos" / name) as gif:
             count = gif.n_frames
+            assert gif.info.get("loop") == PREVIEW_PLAYS - 1
             duration = sum(f.info.get("duration", 0) for f in ImageSequence.Iterator(gif))
             assert 1 < count <= 75, (name, count)
             assert 0 < duration <= 5000, (name, duration)
